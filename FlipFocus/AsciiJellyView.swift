@@ -144,6 +144,7 @@ struct AsciiSlider: View {
                     renderAsciiString(ctx: ctx, str: "@", cx: thumbX, cy: trackY, cellSize: 4.0, scale: 1.2, color: .white, t: t)
                 }
             }
+            .drawingGroup()
             .frame(height: 30)
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -157,9 +158,9 @@ struct AsciiSlider: View {
     
     private var statusText: String {
         let mins = stopwatch.dialedBreakMinutes
-        if mins < round(stopwatch.minEarnedMinutes) { return "YOU EARNED MORE" }
-        if mins <= round(stopwatch.maxEarnedMinutes) { return "EARNED BREAK" }
-        return "EXTRA BREAK"
+        if mins < round(stopwatch.minEarnedMinutes) { return "You earned more!" }
+        if mins <= round(stopwatch.maxEarnedMinutes) { return "Earned!" }
+        return "Too long, unless you really need it."
     }
     
     private func colorForMinutes(_ mins: Double) -> Color {
@@ -221,42 +222,64 @@ private func renderAsciiString(ctx: GraphicsContext, str: String,
 // MARK: - Theme Views
 struct AsciiThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
-    
+
     private var textColor: Color {
-        stopwatch.themeManager.currentTheme.isLight ? .black : .white
+        stopwatch.themeManager.currentTheme?.isLight ?? false ? .black : .white
     }
-    
+
     var body: some View {
-        VStack(spacing: 40) {
-            if stopwatch.showBreakSelection {
-                VStack(spacing: 30) {
-                    AsciiSlider(stopwatch: stopwatch, width: 300)
-                        .frame(width: 300, height: 150)
-                    
-                    Button(action: {
-                        stopwatch.startBreak()
-                    }) {
-                        AsciiTextView(text: "START BREAK", color: textColor, cellSize: 2.5)
-                            .frame(width: 250, height: 50)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 16)
-                            .background(
-                                Capsule()
-                                    .fill(colorForMinutes(stopwatch.dialedBreakMinutes).opacity(0.2))
-                                    .overlay(Capsule().stroke(colorForMinutes(stopwatch.dialedBreakMinutes).opacity(0.4), lineWidth: 1))
-                            )
+        GeometryReader { geo in
+            ZStack {
+                if stopwatch.showBreakSelection {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Button(action: { 
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    stopwatch.showBreakSelection = false 
+                                }
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(textColor.opacity(0.3))
+                                    .padding(24)
+                            }
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 30) {
+                            AsciiSlider(stopwatch: stopwatch, width: geo.size.width - 80)
+                                .frame(width: geo.size.width - 80, height: 150)
+                            Button(action: { stopwatch.startBreak() }) {
+                                AsciiTextView(text: "Start Break", color: textColor, cellSize: 2.5)
+                                    .frame(width: 250, height: 50)
+                                    .padding(.horizontal, 40)
+                                    .padding(.vertical, 16)
+                                    .background(
+                                        Capsule()
+                                            .fill(colorForMinutes(stopwatch.dialedBreakMinutes).opacity(0.15))
+                                            .overlay(Capsule().stroke(colorForMinutes(stopwatch.dialedBreakMinutes).opacity(0.5), lineWidth: 1))
+                                    )
+                            }
+                        }
+                        
+                        Spacer()
                     }
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                } else {
+                    let side = min(geo.size.width, geo.size.height)
+                    AsciiJellyCanvas(stopwatch: stopwatch)
+                        .frame(width: side, height: side)
+                        .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                        .transition(.opacity)
                 }
-                .transition(.asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity),
-                                      removal: .opacity))
-            } else {
-                AsciiJellyCanvas(stopwatch: stopwatch)
-                    .frame(width: 400, height: 400)
-                    .transition(.opacity)
             }
+            .animation(.spring(response: 0.4, dampingFraction: 0.85), value: stopwatch.showBreakSelection)
         }
     }
-    
+
     private func colorForMinutes(_ mins: Double) -> Color {
         let minEarned = round(stopwatch.minEarnedMinutes)
         let maxEarned = round(stopwatch.maxEarnedMinutes)
@@ -286,20 +309,19 @@ struct AsciiJellyCanvas: View {
                     )
                 }
 
-                drawTicks(ctx: ctx, cx: cx, cy: cy, radius: size.width * 0.49, size: size)
 
                 // Rings — inner to outer (pushed out to avoid clashing)
                 let activeElapsed = stopwatch.isBreakActive ? stopwatch.breakTime : stopwatch.elapsedTime
                 let visualRings: [(r: Double, period: Double, color: Color, dim: Color)] = [
                     (size.width * 0.35, 60,       
                      Color(red: 0.0, green: 0.6, blue: 1.0), // Seconds (always blue)
-                     Color(white: 0.05)),
+                     .clear),
                     (size.width * 0.41, 3600,     
                      Color(red: 0.2, green: 0.8, blue: 0.3), // Minutes (always green)
-                     Color(white: 0.05)),
+                     .clear),
                     (size.width * 0.47, 43200,    
                      Color(red: 1.0, green: 0.2, blue: 0.3), // Hours (always red)
-                     Color(white: 0.05)),
+                     .clear),
                 ]
                 
                 for ring in visualRings {
@@ -327,7 +349,7 @@ struct AsciiJellyCanvas: View {
             let y = cy + sin(angle) * radius
             ctx.draw(
                 Text(isMaj ? "|" : ".").font(fnt)
-                    .foregroundColor(Color.white.opacity(isMaj ? 0.22 : 0.07)),
+                    .foregroundColor(textColor.opacity(isMaj ? 0.22 : 0.07)),
                 at: CGPoint(x: x, y: y)
             )
         }
@@ -338,7 +360,7 @@ struct AsciiJellyCanvas: View {
                                 radius: Double, period: Double,
                                 color: Color, dim: Color,
                                 elapsed: TimeInterval, t: Double, size: CGSize) {
-        let nPts       = 144
+        let nPts       = 90
         let prog       = (elapsed / period).truncatingRemainder(dividingBy: 1.0)
         let activeCount = Int(prog * Double(nPts))
         let cellSize   = max(2.5, size.width * 0.008)
@@ -346,12 +368,16 @@ struct AsciiJellyCanvas: View {
 
         for i in 0..<nPts {
             let baseAngle = Double(i) / Double(nPts) * .pi * 2 - .pi / 2
-            let isActive  = i < activeCount
+            let progCurrent = (elapsed / period).truncatingRemainder(dividingBy: 1.0)
+            let isActive = Double(i) / Double(nPts) <= progCurrent
+
+            // Skip drawing inactive dots entirely — they were forming a faint grey ring
+            guard isActive else { continue }
 
             let ph  = Double(i) * 0.43 + 1.0
             let ph2 = Double(i) * 0.71 + 2.5
             let ph3 = Double(i) * 0.29 + 0.8
-            let amp = isActive ? 1.0 : 0.22
+            let amp = 1.0
 
             let wobR  = sin(t * 1.4 + ph)  * radius * 0.02 * amp
             let wave1 = sin(t * 1.8 + ph)  * cellSize * 0.45  * amp
@@ -362,9 +388,10 @@ struct AsciiJellyCanvas: View {
             let py = cy + sin(baseAngle) * (radius + wobR) + wave2
 
             let depth     = max(0, min(1, (wave3 + cellSize) / (cellSize * 2)))
-            let charVal   = isActive ? (0.5 + depth * 0.5) : (0.15 + depth * 0.1)
+
+            let charVal   = 0.5 + depth * 0.5
             let ch        = String(rampChar(charVal))
-            let alpha     = isActive ? (0.45 + depth * 0.55) : (0.05 + depth * 0.06)
+            let alpha     = 0.45 + depth * 0.55
             let shadowOff = (1 - depth) * 2.5
 
             ctx.draw(
@@ -372,13 +399,12 @@ struct AsciiJellyCanvas: View {
                 at: CGPoint(x: px + shadowOff, y: py + shadowOff)
             )
 
-            let bodyColor = isActive ? color.opacity(0.5 + depth * 0.5) : dim.opacity(0.4)
             ctx.draw(
-                Text(ch).font(fnt).foregroundColor(bodyColor),
+                Text(ch).font(fnt).foregroundColor(color.opacity(0.5 + depth * 0.5)),
                 at: CGPoint(x: px, y: py)
             )
 
-            if isActive && depth > 0.55 {
+            if depth > 0.55 {
                 ctx.draw(
                     Text(String(rampChar(0.9))).font(fnt)
                         .foregroundColor(Color.white.opacity((depth - 0.55) * 1.6 * 0.75)),
@@ -398,10 +424,14 @@ struct AsciiJellyCanvas: View {
             let ty = cy + sin(baseAngle) * (radius + wobR) + wave2
             ctx.draw(
                 Text("@").font(.system(size: cellSize + 2, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white),
+                    .foregroundColor(textColor),
                 at: CGPoint(x: tx, y: ty)
             )
         }
+    }
+
+    private var textColor: Color {
+        stopwatch.themeManager.currentTheme?.isLight ?? false ? .black : .white
     }
 
     private func drawDigitDisplay(ctx: GraphicsContext, cx: Double, cy: Double,
@@ -416,24 +446,24 @@ struct AsciiJellyCanvas: View {
 
         let cell = max(4.0, size.width * 0.016)
 
-        renderAsciiString(ctx: ctx, str: mainStr, cx: cx, cy: cy - cell * 2.0, cellSize: cell, scale: 1.2, color: .white, t: t)
-        renderAsciiString(ctx: ctx, str: subStr, cx: cx + cell * 3.0, cy: cy + cell * 6.5, cellSize: cell, scale: 0.8, color: Color(white: 0.5), t: t)
+        renderAsciiString(ctx: ctx, str: mainStr, cx: cx, cy: cy - cell * 2.0, cellSize: cell, scale: 1.2, color: textColor, t: t)
+        renderAsciiString(ctx: ctx, str: subStr, cx: cx + cell * 3.0, cy: cy + cell * 6.5, cellSize: cell, scale: 0.8, color: textColor.opacity(0.5), t: t)
 
         let lbls: [(String, Color, Double)] = [
-            ("HRS", stopwatch.isBreakActive ? Color(red: 0.0, green: 0.4, blue: 0.6) : Color(red: 1.0, green: 0.2, blue: 0.3), cx - cell * 8),
-            ("MIN", stopwatch.isBreakActive ? Color(red: 0.0, green: 0.6, blue: 0.8) : Color(red: 0.2, green: 0.8, blue: 0.3), cx),
-            ("SEC", stopwatch.isBreakActive ? Color(red: 0.0, green: 0.8, blue: 1.0) : Color(red: 0.0, green: 0.6, blue: 1.0), cx + cell * 8),
+            ("Hrs", Color(red: 1.0, green: 0.2, blue: 0.3), cx - cell * 8),
+            ("Min", Color(red: 0.2, green: 0.8, blue: 0.3), cx),
+            ("Sec", Color(red: 0.0, green: 0.6, blue: 1.0), cx + cell * 8),
         ]
         for (lbl, col, lx) in lbls {
             renderAsciiString(ctx: ctx, str: lbl, cx: lx, cy: cy + cell * 10.5, cellSize: cell, scale: 0.45, color: col.opacity(0.8), t: t)
         }
         
         if isBreak {
-            renderAsciiString(ctx: ctx, str: "BREAKING", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.blue.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Breaking", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.blue.opacity(0.8), t: t)
         } else if stopwatch.isRunning {
-            renderAsciiString(ctx: ctx, str: "FOCUSING", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.green.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Focusing", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.green.opacity(0.8), t: t)
         } else if stopwatch.elapsedTime > 0 {
-            renderAsciiString(ctx: ctx, str: "PAUSED", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.orange.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Paused", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.orange.opacity(0.8), t: t)
         }
     }
 }

@@ -5,153 +5,178 @@ struct ContentView: View {
     @State private var showingThemeMenu = false
     @State private var showingIntelMenu = false
     @State private var showingStreakMenu = false
-    
-    private let primaryGradient = LinearGradient(
-        colors: [Color(red: 168/255, green: 85/255, blue: 247/255), Color(red: 236/255, green: 72/255, blue: 153/255)],
-        startPoint: .topLeading,
-        endPoint: .bottomTrailing
-    )
+    @State private var showingSettingsMenu = false
 
     var body: some View {
-        ZStack {
-            // Theme-aware background
-            themeBackgroundColor
-                .ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Top Toolbar
-                HStack(spacing: 16) {
-                    Spacer()
-                    MenuButton(icon: "paintpalette", theme: stopwatch.themeManager.currentTheme, action: { showingThemeMenu = true })
-                    MenuButton(icon: "chart.bar.xaxis", theme: stopwatch.themeManager.currentTheme, action: { showingIntelMenu = true })
-                    MenuButton(icon: "flame", theme: stopwatch.themeManager.currentTheme, action: { showingStreakMenu = true })
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-
+        VStack(spacing: 0) {
+            // 1. TOP TOOLBAR (Inside Safe Area)
+            HStack {
                 Spacer()
-                
-                // Theme Content
-                Group {
-                    switch stopwatch.themeManager.currentTheme {
+                Menu {
+                    Button(action: { showingThemeMenu = true }) {
+                        Label("Theme", systemImage: "paintpalette.fill")
+                    }
+                    Button(action: { showingIntelMenu = true }) {
+                        Label("Stats", systemImage: "chart.bar.fill")
+                    }
+                    Button(action: { showingStreakMenu = true }) {
+                        Label("Streaks", systemImage: "flame.fill")
+                    }
+                    Divider()
+                    Button(action: { showingSettingsMenu = true }) {
+                        Label("Settings", systemImage: "gearshape.fill")
+                    }
+                } label: {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isLightMode ? .black.opacity(0.8) : .white.opacity(0.9))
+                        .frame(width: 44, height: 44)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(.ultraThinMaterial)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(
+                                            isLightMode ? Color.black.opacity(0.1) : Color.white.opacity(0.2),
+                                            lineWidth: 0.75
+                                        )
+                                )
+                        )
+                        .contentShape(Rectangle())
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+
+            // 2. MAIN CONTENT LAYER
+            Group {
+                if let customID = stopwatch.themeManager.selectedCustomThemeID,
+                   let customTheme = stopwatch.themeManager.customThemes.first(where: { $0.id == customID }) {
+                    CustomThemeView(stopwatch: stopwatch, theme: customTheme)
+                } else {
+                    switch stopwatch.themeManager.currentTheme ?? .ascii {
                     case .ascii, .asciiLight:
                         AsciiThemeView(stopwatch: stopwatch)
                     case .minimal, .minimalLight:
                         MinimalThemeView(stopwatch: stopwatch)
-                    case .nature:
-                        NatureThemeView(stopwatch: stopwatch)
-                    case .torus:
-                        TorusThemeView(stopwatch: stopwatch)
                     }
                 }
-                
-                Spacer()
-                
-                // Bottom Controls/Options
-                VStack(spacing: 24) {
-                    if !stopwatch.showBreakSelection {
-                        if !stopwatch.isRunning && !stopwatch.isBreakActive && stopwatch.elapsedTime > 0 {
-                            VStack(spacing: 16) {
-                                Text("SHAKE TO START BREAK")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(stopwatch.themeManager.currentTheme == .torus ? .blue : (stopwatch.themeManager.currentTheme.isLight ? .blue : Color.blue.opacity(0.5)))
-                                
-                                Button(action: {
-                                    stopwatch.reset()
-                                }) {
-                                    Text("RESET SESSION")
-                                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                                        .foregroundColor(stopwatch.themeManager.currentTheme.isLight ? .gray : Color(white: 0.3))
-                                }
-                            }
-                        } else if !stopwatch.isRunning && !stopwatch.isBreakActive {
-                            Text("PUT FACE DOWN TO START FOCUS")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(stopwatch.themeManager.currentTheme.isLight ? .gray.opacity(0.5) : Color(white: 0.25))
-                        }
-                    }
-                }
-                .padding(.bottom, 60)
-                
-                // DEBUG CONTROLS
-                HStack(spacing: 20) {
-                    Button(action: {
-                        stopwatch.elapsedTime += 600 // +10 mins
-                    }) {
-                        Text("DEBUG: +10M")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundColor(stopwatch.themeManager.currentTheme.isLight ? .black.opacity(0.2) : .white.opacity(0.2))
-                    }
-                    
-                    Button(action: {
-                        NotificationCenter.default.post(name: .deviceDidShake, object: nil)
-                    }) {
-                        Text("DEBUG: SHAKE")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundColor(stopwatch.themeManager.currentTheme.isLight ? .black.opacity(0.2) : .white.opacity(0.2))
-                    }
-                }
-                .padding(.bottom, 20)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            // 3. FOOTER HINTS
+            VStack(spacing: 16) {
+                if !stopwatch.showBreakSelection {
+                    if !stopwatch.isRunning && !stopwatch.isBreakActive && stopwatch.elapsedTime > 0 {
+                        VStack(spacing: 12) {
+                            hintLabel("Shake to start a break")
+                            Button(action: { stopwatch.reset() }) {
+                                Text("Reset session")
+                                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                                    .foregroundColor(isLightMode ? .gray : Color(white: 0.35))
+                            }
+                        }
+                    } else if stopwatch.isBreakActive {
+                        hintLabel("Flip face down to end break")
+                    } else if !stopwatch.isRunning {
+                        hintLabel("Place face down to start focus")
+                    }
+                }
+            }
+            .frame(height: 60)
+            .padding(.bottom, 30)
+
         }
-        .onAppear {
-            stopwatch.activate()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            // BACKGROUND LAYER
+            ZStack {
+                themeBackgroundColor.ignoresSafeArea()
+                
+                if let settings = stopwatch.themeManager.activeSettings,
+                   let fileName = settings.backgroundImageFileName,
+                   let uiImage = loadCustomImage(named: fileName) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .ignoresSafeArea()
+                        .clipped()
+                        .overlay(Color.black.opacity(isLightMode ? 0.05 : 0.4))
+                }
+            }
+            .ignoresSafeArea()
         }
+        .onAppear { stopwatch.activate() }
         .sheet(isPresented: $showingThemeMenu) {
             ThemeMenuView(stopwatch: stopwatch)
+                .presentationDetents([.large])
+                .presentationBackground(.ultraThinMaterial)
+                .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showingIntelMenu) {
             IntelMenuView(stopwatch: stopwatch)
+                .presentationDetents([.large])
+                .presentationBackground(.ultraThinMaterial)
+                .presentationCornerRadius(28)
         }
         .sheet(isPresented: $showingStreakMenu) {
             StreakMenuView(stopwatch: stopwatch)
+                .presentationDetents([.large])
+                .presentationBackground(.ultraThinMaterial)
+                .presentationCornerRadius(28)
         }
+        .sheet(isPresented: $showingSettingsMenu) {
+            SettingsMenuView(stopwatch: stopwatch)
+                .presentationDetents([.large])
+                .presentationBackground(.ultraThinMaterial)
+                .presentationCornerRadius(28)
+        }
+        .overlay {
+            // Battery Save Mode Overlay
+            if stopwatch.isBatterySaveModeEnabled && stopwatch.gravityZ > 0.8 {
+                Color.black
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private func loadCustomImage(named name: String) -> UIImage? {
+        let fileManager = FileManager.default
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let url = docs.appendingPathComponent(name)
+        
+        if let data = try? Data(contentsOf: url) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+
+    private var isLightMode: Bool {
+        if let settings = stopwatch.themeManager.activeSettings {
+            return settings.isLightMode
+        }
+        return stopwatch.themeManager.currentTheme?.isLight ?? false
     }
 
     private var themeBackgroundColor: Color {
-        switch stopwatch.themeManager.currentTheme {
-        case .ascii, .minimal, .torus: return .black
-        case .asciiLight, .minimalLight: return .white
-        case .nature: return Color(red: 0.95, green: 0.98, blue: 1.0)
+        if let settings = stopwatch.themeManager.activeSettings {
+            return settings.isLightMode ? Color(red: 253/255, green: 251/255, blue: 212/255) : .black
         }
-    }
-
-    
-    private func formatMinutesSeconds(_ time: TimeInterval) -> String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
-        return String(format: "%02d:%02d", minutes, seconds)
-    }
-    
-    private func formatTenths(_ time: TimeInterval) -> String {
-        let tenths = Int((time.truncatingRemainder(dividingBy: 1)) * 10)
-        return String(format: ".%d", tenths)
-    }
-
-    private func colorForMinutes(_ mins: Double) -> Color {
-        let minEarned = round(stopwatch.minEarnedMinutes)
-        let maxEarned = round(stopwatch.maxEarnedMinutes)
         
-        if mins < minEarned { return .orange }
-        if mins <= maxEarned { return .green }
-        return .red
-    }
-}
-
-struct MenuButton: View {
-    let icon: String
-    let theme: ThemeType
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(theme.isLight ? .black.opacity(0.4) : .white.opacity(0.4))
-                .frame(width: 36, height: 36)
-                .background(theme.isLight ? Color.black.opacity(0.05) : Color.white.opacity(0.08))
-                .cornerRadius(8)
+        switch stopwatch.themeManager.currentTheme ?? .ascii {
+        case .ascii, .minimal:      return .black
+        case .asciiLight, .minimalLight: return Color(red: 253/255, green: 251/255, blue: 212/255)
         }
+    }
+
+    private func hintLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundColor(isLightMode
+                ? .black.opacity(0.3)
+                : .white.opacity(0.3))
+            .tracking(0.5)
     }
 }
 
