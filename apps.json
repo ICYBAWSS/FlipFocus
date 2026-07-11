@@ -1,0 +1,43 @@
+{
+  "name": "FlipFocus",
+  "identifier": "icybawss.flipfocus.source",
+  "subtitle": "Flip your phone. Focus your mind.",
+  "description": "The official AltStore source for FlipFocus — a focus timer that starts when you flip your phone face down.",
+  "iconURL": "https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/FlipFocus/Assets.xcassets/AppIcon.appiconset/icon%281%29.png",
+  "website": "https://github.com/ICYBAWSS/flipfocus",
+  "tintColor": "#4F46E5",
+  "featuredApps": [
+    "icybawss.FlipFocus"
+  ],
+  "apps": [
+    {
+      "name": "FlipFocus",
+      "bundleIdentifier": "icybawss.FlipFocus",
+      "developerName": "ICYBAWSS",
+      "subtitle": "Flip your phone. Focus your mind.",
+      "localizedDescription": "FlipFocus turns your phone into a focus tool. Place your phone face down and the timer starts automatically; flip it back up and your session ends. Track streaks, choose from multiple ASCII and minimal themes, and stay off your phone while you work.\n\nFeatures:\n• Motion-based focus detection — flip face down to start\n• Focus streaks and stats\n• Multiple themes (ASCII jelly, minimal, custom)\n• Break timer with end-of-break sound",
+      "iconURL": "https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/FlipFocus/Assets.xcassets/AppIcon.appiconset/icon%281%29.png",
+      "tintColor": "#4F46E5",
+      "category": "productivity",
+      "screenshots": [],
+      "versions": [
+        {
+          "version": "1.0",
+          "buildVersion": "1",
+          "date": "2026-07-10",
+          "localizedDescription": "Initial AltStore release of FlipFocus.",
+          "downloadURL": "https://github.com/ICYBAWSS/flipfocus/releases/download/v1.0/FlipFocus.ipa",
+          "size": 0,
+          "minOSVersion": "18.0"
+        }
+      ],
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {
+          "NSMotionUsageDescription": "This app uses the motion sensor to detect when your phone is face down to start focusing."
+        }
+      }
+    }
+  ],
+  "news": []
+}
