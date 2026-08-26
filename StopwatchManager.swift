@@ -274,10 +274,16 @@ class StopwatchManager: ObservableObject {
     private let queue = OperationQueue()
     
     private var lastShakeDate = Date.distantPast
+    private var themeManagerCancellable: AnyCancellable?
 
     init() {
         loadSessions()
         requestNotificationPermissions()
+        // ThemeManager is a nested ObservableObject — its own @Published changes don't
+        // propagate to views observing only `self`, so forward them manually.
+        themeManagerCancellable = themeManager.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
     }
     
     func save() {
@@ -357,6 +363,40 @@ class StopwatchManager: ObservableObject {
         sessions = []
         save()
     }
+
+    #if targetEnvironment(simulator)
+    // Screenshot-only helpers, never compiled on device.
+    func debugLoadDemoData() {
+        let cal = Calendar.current
+        var demo: [FocusSession] = []
+        for dayOffset in 0...16 {
+            if dayOffset == 5 || dayOffset == 11 { continue } // gaps so the streak/calendar look real
+            let day = cal.date(byAdding: .day, value: -dayOffset, to: Date())!
+            let start = cal.date(bySettingHour: 9, minute: 0, second: 0, of: day) ?? day
+            let focusMin = Double.random(in: 65...115)
+            let breakMin = focusMin * Double.random(in: 0.08...0.2)
+            demo.append(FocusSession(startTime: start, focusDuration: focusMin * 60, breakDuration: breakMin * 60, theme: themeManager.currentTheme?.rawValue ?? "CUSTOM"))
+        }
+        sessions = demo
+        save()
+    }
+
+    func debugFastForward(_ seconds: TimeInterval) {
+        accumulatedTime += seconds
+        if !isRunning { elapsedTime = accumulatedTime }
+    }
+
+    /// Pins the clock to an exact elapsed time and leaves `isRunning` true (with no
+    /// timer attached) so every theme renders identical digits in the "Focus" state.
+    /// Used to shoot the same moment across themes for composite screenshots.
+    func debugFreeze(at seconds: TimeInterval) {
+        pause()
+        accumulatedTime = seconds
+        elapsedTime = seconds
+        startTime = nil
+        isRunning = true
+    }
+    #endif
 
     func resetStreak() {
         // Streaks are derived from sessions. To reset streaks, we filter out sessions that contribute to streaks, 

@@ -293,6 +293,7 @@ struct AsciiThemeView: View {
 // MARK: - Canvas View
 struct AsciiJellyCanvas: View {
     @ObservedObject var stopwatch: StopwatchManager
+    @State private var revealStart: Double? = nil
 
     var body: some View {
         TimelineView(.animation) { tl in
@@ -324,17 +325,27 @@ struct AsciiJellyCanvas: View {
                      .clear),
                 ]
                 
+                let revealFactor: Double = {
+                    guard let start = revealStart else { return 1.0 }
+                    let dt = t - start
+                    return dt >= 1.0 ? 1.0 : max(0, dt / 1.0)
+                }()
+
                 for ring in visualRings {
                     drawJellyRing(ctx: ctx, cx: cx, cy: cy,
                                   radius: ring.r, period: ring.period,
                                   color: ring.color, dim: ring.dim,
-                                  elapsed: activeElapsed, t: t, size: size)
+                                  elapsed: activeElapsed, revealFactor: revealFactor, t: t, size: size)
                 }
 
-                drawDigitDisplay(ctx: ctx, cx: cx, cy: cy, 
-                                 elapsed: activeElapsed, 
+                drawDigitDisplay(ctx: ctx, cx: cx, cy: cy,
+                                 elapsed: activeElapsed,
                                  t: t, size: size, isBreak: stopwatch.isBreakActive)
             }
+        }
+        .onChange(of: stopwatch.isRunning) { _, running in
+            guard running else { return }
+            revealStart = Date.timeIntervalSinceReferenceDate
         }
     }
 
@@ -359,16 +370,16 @@ struct AsciiJellyCanvas: View {
     private func drawJellyRing(ctx: GraphicsContext, cx: Double, cy: Double,
                                 radius: Double, period: Double,
                                 color: Color, dim: Color,
-                                elapsed: TimeInterval, t: Double, size: CGSize) {
+                                elapsed: TimeInterval, revealFactor: Double, t: Double, size: CGSize) {
         let nPts       = 90
-        let prog       = (elapsed / period).truncatingRemainder(dividingBy: 1.0)
+        let prog       = (elapsed / period).truncatingRemainder(dividingBy: 1.0) * revealFactor
         let activeCount = Int(prog * Double(nPts))
         let cellSize   = max(2.5, size.width * 0.008)
         let fnt        = Font.system(size: cellSize, weight: .bold, design: .monospaced)
 
         for i in 0..<nPts {
             let baseAngle = Double(i) / Double(nPts) * .pi * 2 - .pi / 2
-            let progCurrent = (elapsed / period).truncatingRemainder(dividingBy: 1.0)
+            let progCurrent = prog
             let isActive = Double(i) / Double(nPts) <= progCurrent
 
             // Skip drawing inactive dots entirely — they were forming a faint grey ring
@@ -459,10 +470,10 @@ struct AsciiJellyCanvas: View {
         }
         
         if isBreak {
-            renderAsciiString(ctx: ctx, str: "Breaking", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.blue.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Break", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.blue.opacity(0.8), t: t)
         } else if stopwatch.isRunning {
-            renderAsciiString(ctx: ctx, str: "Focusing", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.green.opacity(0.8), t: t)
-        } else if stopwatch.elapsedTime > 0 {
+            renderAsciiString(ctx: ctx, str: "Focus", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.green.opacity(0.8), t: t)
+        } else {
             renderAsciiString(ctx: ctx, str: "Paused", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.orange.opacity(0.8), t: t)
         }
     }

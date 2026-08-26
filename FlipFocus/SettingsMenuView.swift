@@ -37,12 +37,18 @@ struct SettingsMenuView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         MenuLabel(text: "General").padding(.horizontal, 24)
                         VStack(spacing: 0) {
-                            settingsToggle(label: "Battery Save Mode", 
-                                           description: "Dims screen when face down", 
+                            settingsToggle(label: "Battery Save Mode",
+                                           description: "Dims screen when face down",
                                            isOn: $stopwatch.isBatterySaveModeEnabled)
-                            settingsToggle(label: "Haptic Feedback", 
+                                .onChange(of: stopwatch.isBatterySaveModeEnabled) { _, _ in
+                                    stopwatch.save()
+                                }
+                            settingsToggle(label: "Haptic Feedback",
                                            description: "Might annoy some people",
                                            isOn: $stopwatch.isHapticsEnabled)
+                                .onChange(of: stopwatch.isHapticsEnabled) { _, _ in
+                                    stopwatch.save()
+                                }
                             
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {

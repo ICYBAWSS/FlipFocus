@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MinimalThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
+    @State private var ringsRevealed = true
 
     private var isLight: Bool { stopwatch.themeManager.currentTheme?.isLight ?? false }
     private var textColor: Color { isLight ? .black : .white }
@@ -16,8 +17,7 @@ struct MinimalThemeView: View {
     private var stateLabel: String {
         if stopwatch.isBreakActive { return "Break" }
         if stopwatch.isRunning     { return "Focus" }
-        if stopwatch.elapsedTime > 0 { return "Paused" }
-        return "Ready"
+        return "Paused"
     }
 
     var body: some View {
@@ -34,6 +34,13 @@ struct MinimalThemeView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: stopwatch.showBreakSelection)
+        .onChange(of: stopwatch.isRunning) { _, running in
+            guard running else { return }
+            ringsRevealed = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+                withAnimation(.easeOut(duration: 1.0)) { ringsRevealed = true }
+            }
+        }
     }
 
     // MARK: - Timer View
@@ -86,7 +93,27 @@ struct MinimalThemeView: View {
             tripleProgressRings(active: active)
                 .frame(width: 240, height: 240)
 
+            ringLegend
+                .padding(.top, 16)
+
             Spacer()
+        }
+    }
+
+    private var ringLegend: some View {
+        HStack(spacing: 20) {
+            legendItem("Hrs", color: Color(red: 1.0, green: 0.2, blue: 0.3))
+            legendItem("Min", color: Color(red: 0.2, green: 0.8, blue: 0.3))
+            legendItem("Sec", color: Color(red: 0.0, green: 0.6, blue: 1.0))
+        }
+    }
+
+    private func legendItem(_ label: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(label)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundColor(subtleColor)
         }
     }
 
@@ -127,7 +154,7 @@ struct MinimalThemeView: View {
                 .frame(width: radius * 2, height: radius * 2)
 
             Circle()
-                .trim(from: 0, to: CGFloat(progress))
+                .trim(from: 0, to: CGFloat(ringsRevealed ? progress : 0))
                 .stroke(
                     color,
                     style: StrokeStyle(lineWidth: thickness + 0.5, lineCap: .round)

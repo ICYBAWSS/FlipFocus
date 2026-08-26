@@ -3,7 +3,8 @@ import SwiftUI
 struct CustomThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
     let theme: CustomTheme
-    
+    @State private var ringsRevealed = true
+
     private var settings: CustomThemeSettings { theme.settings }
     private var isLight: Bool { settings.isLightMode }
     private var textColor: Color { isLight ? .black : .white }
@@ -16,6 +17,13 @@ struct CustomThemeView: View {
                 minimalSliderView
             } else {
                 minimalTimerView
+            }
+        }
+        .onChange(of: stopwatch.isRunning) { _, running in
+            guard running else { return }
+            ringsRevealed = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
+                withAnimation(.easeOut(duration: 1.0)) { ringsRevealed = true }
             }
         }
     }
@@ -70,12 +78,32 @@ struct CustomThemeView: View {
                 singleRing(progress: (active / 3600).truncatingRemainder(dividingBy: 1.0), 
                            color: settings.color(for: settings.ringColorMinutes), thickness: 3, radius: 95)
                 // Hours (Inner)
-                singleRing(progress: (active / 43200).truncatingRemainder(dividingBy: 1.0), 
+                singleRing(progress: (active / 43200).truncatingRemainder(dividingBy: 1.0),
                            color: settings.color(for: settings.ringColorHours), thickness: 3, radius: 80)
             }
             .frame(width: 240, height: 240)
 
+            ringLegend
+                .padding(.top, 16)
+
             Spacer()
+        }
+    }
+
+    private var ringLegend: some View {
+        HStack(spacing: 20) {
+            legendItem("Hrs", color: settings.color(for: settings.ringColorHours))
+            legendItem("Min", color: settings.color(for: settings.ringColorMinutes))
+            legendItem("Sec", color: settings.color(for: settings.ringColorSeconds))
+        }
+    }
+
+    private func legendItem(_ label: String, color: Color) -> some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 6, height: 6)
+            Text(label)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundColor(subtleColor)
         }
     }
 
@@ -98,7 +126,7 @@ struct CustomThemeView: View {
                 .stroke(textColor.opacity(0.1), lineWidth: thickness)
                 .frame(width: radius * 2, height: radius * 2)
             Circle()
-                .trim(from: 0, to: CGFloat(progress))
+                .trim(from: 0, to: CGFloat(ringsRevealed ? progress : 0))
                 .stroke(color, style: StrokeStyle(lineWidth: thickness + 1, lineCap: .round))
                 .frame(width: radius * 2, height: radius * 2)
                 .rotationEffect(.degrees(-90))

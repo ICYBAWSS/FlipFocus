@@ -86,6 +86,9 @@ struct ContentView: View {
             .frame(height: 60)
             .padding(.bottom, 30)
 
+            #if targetEnvironment(simulator)
+            simulatorDebugStrip
+            #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background {
@@ -140,6 +143,37 @@ struct ContentView: View {
             }
         }
     }
+
+    #if targetEnvironment(simulator)
+    // No CoreMotion in the Simulator — this stands in for a physical flip/shake so
+    // the face-down and shake gated flows are reachable for testing. Never compiled on device.
+    private var simulatorDebugStrip: some View {
+        HStack(spacing: 6) {
+            Button(stopwatch.isRunning ? "Pause" : "Flip") {
+                stopwatch.isRunning ? stopwatch.pause() : stopwatch.start()
+            }
+            Button("Shake") {
+                if stopwatch.elapsedTime > 0 && !stopwatch.isRunning && !stopwatch.isBreakActive {
+                    withAnimation(.spring()) {
+                        stopwatch.showBreakSelection = true
+                        stopwatch.dialedBreakMinutes = round(stopwatch.minEarnedMinutes)
+                    }
+                }
+            }
+            Button(stopwatch.gravityZ > 0.8 ? "Up" : "Down") {
+                stopwatch.gravityZ = stopwatch.gravityZ > 0.8 ? 0.0 : 0.9
+            }
+            Button("Data") { stopwatch.debugLoadDemoData() }
+            Button("+45m") { stopwatch.debugFastForward(45 * 60) }
+            // 01:27:43 — every ring lands on a distinct, clearly visible arc.
+            Button("Freeze") { stopwatch.debugFreeze(at: 5263) }
+        }
+        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .buttonStyle(.bordered)
+        .tint(.pink)
+        .padding(.bottom, 6)
+    }
+    #endif
 
     private func loadCustomImage(named name: String) -> UIImage? {
         let fileManager = FileManager.default
