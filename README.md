@@ -16,9 +16,9 @@ Or tap: [altstore://source?url=https://raw.githubusercontent.com/ICYBAWSS/flipfo
 
 Then open the **FlipFocus** source and install the app.
 
-## Publishing a new version (one-time setup + each release)
+## Publishing a new version
 
-The source (`apps.json`) is live, but it points at an IPA that must be built and hosted. To make a release installable:
+The `v1.0` release is live and installable via the source above. To ship a new version:
 
 1. **Build & export an IPA** in Xcode: Product → Archive → Distribute App → *Release Testing* (or Ad Hoc / Development), which produces `FlipFocus.ipa`.
 2. **Create a GitHub Release** tagged `v1.0` on this repo and upload `FlipFocus.ipa` as an asset. The download URL must match the one in `apps.json`:
