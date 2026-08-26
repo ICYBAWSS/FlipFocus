@@ -16,4 +16,3 @@ Or tap: [altstore://source?url=https://raw.githubusercontent.com/ICYBAWSS/flipfo
 
 Then open the **FlipFocus** source and install the app.
 
-> Note: AltStore installs unsigned/dev-signed IPAs and re-signs them on-device with your Apple ID, so you don't need a distribution certificate — a free Apple ID works, with the usual 7-day resign limit.
