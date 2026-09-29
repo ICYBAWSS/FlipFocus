@@ -31,10 +31,10 @@ struct IntelMenuView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Stats for nerds")
-                            .font(.system(size: 11, weight: .bold, design: .default))
+                            .font(helvetica(11, .bold))
                             .foregroundColor(.secondary)
                         Text("Statistics")
-                            .font(.system(size: 48, weight: .bold, design: .default))
+                            .font(helvetica(48, .bold))
                     }
                     .padding(.horizontal, 24)
 
@@ -46,7 +46,7 @@ struct IntelMenuView: View {
                                 ForEach(TimeFrame.allCases) { tf in
                                     Button(action: { selectedTimeFrame = tf }) {
                                         Text(tf.rawValue)
-                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                            .font(helvetica(11, .semibold))
                                             .fixedSize(horizontal: true, vertical: false)
                                             .padding(.horizontal, 10).padding(.vertical, 6)
                                             .background(Capsule().fill(selectedTimeFrame == tf ? Color.blue : Color.primary.opacity(0.04)))
@@ -86,7 +86,7 @@ struct IntelMenuView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(helvetica(15, .semibold))
                 }
             }
         }

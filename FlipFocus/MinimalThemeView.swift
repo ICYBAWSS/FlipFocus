@@ -2,16 +2,19 @@ import SwiftUI
 
 struct MinimalThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
-    @State private var ringsRevealed = true
+    @State private var revealStart: Double? = nil
 
-    private var isLight: Bool { stopwatch.themeManager.currentTheme?.isLight ?? false }
+    private var isLight: Bool { stopwatch.themeManager.isLightActive }
     private var textColor: Color { isLight ? .black : .white }
-    private var subtleColor: Color { isLight ? Color.black.opacity(0.25) : Color.white.opacity(0.25) }
+    private var subtleColor: Color { isLight ? Color.black.opacity(0.45) : Color.white.opacity(0.45) }
+
+    // Ring + legend hues for the active theme (see ThemeManager.ringColors).
+    private var ringColors: (sec: Color, min: Color, hr: Color) { stopwatch.themeManager.ringColors }
 
     private var accentColor: Color {
-        if stopwatch.isBreakActive { return .blue }
-        if stopwatch.isRunning    { return Color(red: 0.12, green: 0.78, blue: 0.42) }
-        return Color(red: 1.0, green: 0.62, blue: 0.1)
+        if stopwatch.isBreakActive { return isLight ? ringColors.sec : .blue }
+        if stopwatch.isRunning    { return isLight ? ringColors.min : Color(red: 0.12, green: 0.78, blue: 0.42) }
+        return isLight ? stopwatch.themeManager.pausedColor : Color(red: 1.0, green: 0.62, blue: 0.1)
     }
 
     private var stateLabel: String {
@@ -34,12 +37,8 @@ struct MinimalThemeView: View {
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: stopwatch.showBreakSelection)
-        .onChange(of: stopwatch.isRunning) { _, running in
-            guard running else { return }
-            ringsRevealed = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
-                withAnimation(.easeOut(duration: 1.0)) { ringsRevealed = true }
-            }
+        .onChange(of: stopwatch.ringRevealID) { _, _ in
+            revealStart = Date.timeIntervalSinceReferenceDate
         }
     }
 
@@ -62,7 +61,7 @@ struct MinimalThemeView: View {
                     .opacity(stopwatch.isRunning || stopwatch.isBreakActive ? 1 : 0.4)
 
                 Text(stateLabel)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(helvetica(11, .semibold))
                     .foregroundColor(accentColor)
                     .tracking(0.5)
             }
@@ -81,7 +80,7 @@ struct MinimalThemeView: View {
 
                 // Tenths
                 Text(".\(fraction)")
-                    .font(.system(size: 28, weight: .light))
+                    .font(helvetica(28, .light))
                     .foregroundColor(subtleColor)
                     .padding(.bottom, 6)
             }
@@ -102,9 +101,9 @@ struct MinimalThemeView: View {
 
     private var ringLegend: some View {
         HStack(spacing: 20) {
-            legendItem("Hrs", color: Color(red: 1.0, green: 0.2, blue: 0.3))
-            legendItem("Min", color: Color(red: 0.2, green: 0.8, blue: 0.3))
-            legendItem("Sec", color: Color(red: 0.0, green: 0.6, blue: 1.0))
+            legendItem("Hrs", color: ringColors.hr)
+            legendItem("Min", color: ringColors.min)
+            legendItem("Sec", color: ringColors.sec)
         }
     }
 
@@ -112,7 +111,7 @@ struct MinimalThemeView: View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(helvetica(11, .semibold))
                 .foregroundColor(subtleColor)
         }
     }
@@ -120,11 +119,11 @@ struct MinimalThemeView: View {
     private func timeBlock(value: Int, unit: String) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 2) {
             Text(String(format: "%02d", value))
-                .font(.system(size: 72, weight: .thin, design: .default))
+                .font(helvetica(72, .thin))
                 .foregroundColor(textColor)
                 .monospacedDigit()
             Text(unit)
-                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .font(helvetica(16, .regular))
                 .foregroundColor(subtleColor)
                 .padding(.bottom, 10)
         }
@@ -134,16 +133,23 @@ struct MinimalThemeView: View {
         let hProg = (active / 43200).truncatingRemainder(dividingBy: 1.0)
         let mProg = (active / 3600).truncatingRemainder(dividingBy: 1.0)
         let sProg = (active / 60).truncatingRemainder(dividingBy: 1.0)
-        
-        return ZStack {
-            // Seconds (Outer) - Blue
-            singleRing(progress: sProg, color: Color(red: 0.0, green: 0.6, blue: 1.0), thickness: 2, radius: 110)
-            
-            // Minutes (Middle) - Green
-            singleRing(progress: mProg, color: Color(red: 0.2, green: 0.8, blue: 0.3), thickness: 2, radius: 95)
-            
-            // Hours (Inner) - Red
-            singleRing(progress: hProg, color: Color(red: 1.0, green: 0.2, blue: 0.3), thickness: 2, radius: 80)
+
+        // TimelineView (not an implicit animation) drives the sweep frame by frame, so
+        // a flip face-up grows the arcs 0 → their real position instead of the value
+        // already being there. Same trick the ASCII canvas uses.
+        return TimelineView(.animation) { tl in
+            let reveal = ringRevealFactor(since: revealStart, at: tl.date.timeIntervalSinceReferenceDate)
+
+            ZStack {
+                // Seconds (Outer) - Blue
+                singleRing(progress: sProg * reveal, color: ringColors.sec, thickness: 3, radius: 110)
+
+                // Minutes (Middle) - Green
+                singleRing(progress: mProg * reveal, color: ringColors.min, thickness: 3, radius: 95)
+
+                // Hours (Inner) - Red
+                singleRing(progress: hProg * reveal, color: ringColors.hr, thickness: 3, radius: 80)
+            }
         }
     }
 
@@ -154,14 +160,13 @@ struct MinimalThemeView: View {
                 .frame(width: radius * 2, height: radius * 2)
 
             Circle()
-                .trim(from: 0, to: CGFloat(ringsRevealed ? progress : 0))
+                .trim(from: 0, to: CGFloat(progress))
                 .stroke(
                     color,
                     style: StrokeStyle(lineWidth: thickness + 0.5, lineCap: .round)
                 )
                 .frame(width: radius * 2, height: radius * 2)
                 .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 1), value: progress)
         }
     }
 
@@ -178,7 +183,7 @@ struct MinimalThemeView: View {
                     }
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(helvetica(24))
                         .foregroundColor(subtleColor)
                         .padding(24)
                 }
@@ -190,18 +195,18 @@ struct MinimalThemeView: View {
             // Big number display
             VStack(spacing: 6) {
                 Text("\(Int(stopwatch.dialedBreakMinutes))")
-                    .font(.system(size: 100, weight: .thin))
+                    .font(helvetica(100, .thin))
                     .foregroundColor(textColor)
                     .monospacedDigit()
                     .animation(nil, value: stopwatch.dialedBreakMinutes)
 
                 Text("minutes")
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .font(helvetica(14, .regular))
                     .foregroundColor(subtleColor)
 
                 // Earned range label
                 Text(breakStatusText)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(helvetica(11, .semibold))
                     .foregroundColor(breakColor)
                     .tracking(0.5)
                     .padding(.top, 6)
@@ -249,7 +254,7 @@ struct MinimalThemeView: View {
             // CTA Button
             Button(action: { stopwatch.startBreak() }) {
                 Text("Start Break")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(helvetica(16, .semibold))
                     .foregroundColor(isLight ? .white : .black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)

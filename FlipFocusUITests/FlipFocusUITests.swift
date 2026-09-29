@@ -38,4 +38,26 @@ final class FlipFocusUITests: XCTestCase {
             XCUIApplication().launch()
         }
     }
+
+    // SCRATCH: pause a session and dump frames so they can be inspected off-device.
+    @MainActor
+    func testPausedSweepFrames() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.buttons["Freeze"].tap()          // pin the clock at 01:27:43
+        app.buttons["Flip"].tap()            // pause — this is when the sweep should play
+
+        func shot(_ name: String) {
+            let data = XCUIScreen.main.screenshot().pngRepresentation
+            let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            try? data.write(to: dir.appendingPathComponent("\(name).png"))
+        }
+
+        shot("pause-0")                      // right after the pause
+        Thread.sleep(forTimeInterval: 0.35)
+        shot("pause-1")                      // mid-sweep
+        Thread.sleep(forTimeInterval: 1.5)
+        shot("pause-2")                      // settled
+    }
 }

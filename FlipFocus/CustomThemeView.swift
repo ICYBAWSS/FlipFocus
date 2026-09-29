@@ -3,7 +3,7 @@ import SwiftUI
 struct CustomThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
     let theme: CustomTheme
-    @State private var ringsRevealed = true
+    @State private var revealStart: Double? = nil
 
     private var settings: CustomThemeSettings { theme.settings }
     private var isLight: Bool { settings.isLightMode }
@@ -19,12 +19,8 @@ struct CustomThemeView: View {
                 minimalTimerView
             }
         }
-        .onChange(of: stopwatch.isRunning) { _, running in
-            guard running else { return }
-            ringsRevealed = false
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.02) {
-                withAnimation(.easeOut(duration: 1.0)) { ringsRevealed = true }
-            }
+        .onChange(of: stopwatch.ringRevealID) { _, _ in
+            revealStart = Date.timeIntervalSinceReferenceDate
         }
     }
 
@@ -45,7 +41,7 @@ struct CustomThemeView: View {
                     .fill(accentColor)
                     .frame(width: 7, height: 7)
                 Text(stopwatch.isBreakActive ? "Break" : (stopwatch.isRunning ? "Focus" : "Paused"))
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(helvetica(11, .semibold))
                     .foregroundColor(accentColor)
                     .tracking(0.5)
             }
@@ -61,7 +57,7 @@ struct CustomThemeView: View {
                 Text("  ")
                 timeBlock(value: seconds, unit: "s")
                 Text(".\(fraction)")
-                    .font(.system(size: 28, weight: .light))
+                    .font(helvetica(28, .light))
                     .foregroundColor(subtleColor)
                     .padding(.bottom, 6)
             }
@@ -70,16 +66,20 @@ struct CustomThemeView: View {
             Spacer().frame(height: 40)
 
             // Triple progress rings with custom colors
-            ZStack {
-                // Seconds (Outer)
-                singleRing(progress: (active / 60).truncatingRemainder(dividingBy: 1.0), 
-                           color: settings.color(for: settings.ringColorSeconds), thickness: 3, radius: 110)
-                // Minutes (Middle)
-                singleRing(progress: (active / 3600).truncatingRemainder(dividingBy: 1.0), 
-                           color: settings.color(for: settings.ringColorMinutes), thickness: 3, radius: 95)
-                // Hours (Inner)
-                singleRing(progress: (active / 43200).truncatingRemainder(dividingBy: 1.0),
-                           color: settings.color(for: settings.ringColorHours), thickness: 3, radius: 80)
+            TimelineView(.animation) { tl in
+                let reveal = ringRevealFactor(since: revealStart, at: tl.date.timeIntervalSinceReferenceDate)
+
+                ZStack {
+                    // Seconds (Outer)
+                    singleRing(progress: (active / 60).truncatingRemainder(dividingBy: 1.0) * reveal,
+                               color: settings.color(for: settings.ringColorSeconds), thickness: 3, radius: 110)
+                    // Minutes (Middle)
+                    singleRing(progress: (active / 3600).truncatingRemainder(dividingBy: 1.0) * reveal,
+                               color: settings.color(for: settings.ringColorMinutes), thickness: 3, radius: 95)
+                    // Hours (Inner)
+                    singleRing(progress: (active / 43200).truncatingRemainder(dividingBy: 1.0) * reveal,
+                               color: settings.color(for: settings.ringColorHours), thickness: 3, radius: 80)
+                }
             }
             .frame(width: 240, height: 240)
 
@@ -102,7 +102,7 @@ struct CustomThemeView: View {
         HStack(spacing: 5) {
             Circle().fill(color).frame(width: 6, height: 6)
             Text(label)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(helvetica(11, .semibold))
                 .foregroundColor(subtleColor)
         }
     }
@@ -110,11 +110,11 @@ struct CustomThemeView: View {
     private func timeBlock(value: Int, unit: String) -> some View {
         HStack(alignment: .lastTextBaseline, spacing: 2) {
             Text(String(format: "%02d", value))
-                .font(.system(size: 72, weight: .thin))
+                .font(helvetica(72, .thin))
                 .foregroundColor(textColor)
                 .monospacedDigit()
             Text(unit)
-                .font(.system(size: 16, weight: .regular))
+                .font(helvetica(16, .regular))
                 .foregroundColor(subtleColor)
                 .padding(.bottom, 10)
         }
@@ -126,7 +126,7 @@ struct CustomThemeView: View {
                 .stroke(textColor.opacity(0.1), lineWidth: thickness)
                 .frame(width: radius * 2, height: radius * 2)
             Circle()
-                .trim(from: 0, to: CGFloat(ringsRevealed ? progress : 0))
+                .trim(from: 0, to: CGFloat(progress))
                 .stroke(color, style: StrokeStyle(lineWidth: thickness + 1, lineCap: .round))
                 .frame(width: radius * 2, height: radius * 2)
                 .rotationEffect(.degrees(-90))
@@ -146,7 +146,7 @@ struct CustomThemeView: View {
                     }
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(helvetica(24))
                         .foregroundColor(subtleColor)
                         .padding(24)
                 }
@@ -156,9 +156,9 @@ struct CustomThemeView: View {
             Spacer()
             VStack(spacing: 6) {
                 Text("\(Int(stopwatch.dialedBreakMinutes))")
-                    .font(.system(size: 100, weight: .thin))
+                    .font(helvetica(100, .thin))
                     .foregroundColor(textColor)
-                Text("minutes").font(.system(size: 14)).foregroundColor(subtleColor)
+                Text("minutes").font(helvetica(14)).foregroundColor(subtleColor)
             }
             .padding(.bottom, 52)
 
@@ -180,7 +180,7 @@ struct CustomThemeView: View {
 
             Button(action: { stopwatch.startBreak() }) {
                 Text("Start Break")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(helvetica(16, .semibold))
                     .foregroundColor(isLight ? .white : .black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)

@@ -26,10 +26,10 @@ struct SettingsMenuView: View {
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Some stuff u might want to tweak")
-                            .font(.system(size: 11, weight: .bold, design: .default))
+                            .font(helvetica(11, .bold))
                             .foregroundColor(.secondary)
                         Text("Settings")
-                            .font(.system(size: 48, weight: .bold, design: .default))
+                            .font(helvetica(48, .bold))
                     }
                     .padding(.horizontal, 24)
 
@@ -54,14 +54,14 @@ struct SettingsMenuView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Shake Sensitivity")
-                                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                            .font(helvetica(15, .semibold))
                                         Text("How hard you need to shake for a break. More might be more fun?")
-                                            .font(.system(size: 11, design: .rounded))
+                                            .font(helvetica(11))
                                             .foregroundColor(.secondary)
                                     }
                                     Spacer()
                                     Text(sensitivityLabel)
-                                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                        .font(helvetica(11, .bold))
                                         .foregroundColor(.blue)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
@@ -75,9 +75,9 @@ struct SettingsMenuView: View {
                                     }
                                 
                                 HStack {
-                                    Text("Sensitive").font(.system(size: 8, weight: .bold)).foregroundColor(.secondary)
+                                    Text("Sensitive").font(helvetica(8, .bold)).foregroundColor(.secondary)
                                     Spacer()
-                                    Text("Firm").font(.system(size: 8, weight: .bold)).foregroundColor(.secondary)
+                                    Text("Firm").font(helvetica(8, .bold)).foregroundColor(.secondary)
                                 }
                             }
                             .padding(.horizontal, 18)
@@ -131,10 +131,10 @@ struct SettingsMenuView: View {
                     // About
                     VStack(alignment: .center, spacing: 8) {
                         Text("FlipFocus v1.0")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(helvetica(12, .medium))
                             .foregroundColor(.secondary)
                         Text("Thank you for using my app! :D")
-                            .font(.system(size: 11, design: .rounded))
+                            .font(helvetica(11))
                             .foregroundColor(.secondary.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity)
@@ -150,7 +150,7 @@ struct SettingsMenuView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(helvetica(15, .semibold))
                 }
             }
             .alert("Reset all statistics?", isPresented: $showingResetStatsAlert) {
@@ -185,9 +185,9 @@ struct SettingsMenuView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(.system(size: 15, weight: .bold, design: .default))
+                    .font(helvetica(15, .bold))
                 Text(description)
-                    .font(.system(size: 12, weight: .medium, design: .default))
+                    .font(helvetica(12, .medium))
                     .foregroundColor(.secondary)
             }
             Spacer()
@@ -205,15 +205,15 @@ struct SettingsMenuView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(label)
-                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .font(helvetica(15, .bold))
                         .foregroundColor(color)
                     Text(description)
-                        .font(.system(size: 12, weight: .medium, design: .default))
+                        .font(helvetica(12, .medium))
                         .foregroundColor(.secondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(helvetica(12, .bold))
                     .foregroundColor(.secondary.opacity(0.4))
             }
             .padding(.horizontal, 18)

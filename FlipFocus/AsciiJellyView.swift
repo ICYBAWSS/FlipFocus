@@ -104,7 +104,7 @@ struct AsciiSlider: View {
                     .frame(height: 40)
                 
                 Text(statusText)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(helvetica(10, .bold))
                     .foregroundColor(colorForMinutes(stopwatch.dialedBreakMinutes).opacity(0.8))
             }
             
@@ -167,9 +167,9 @@ struct AsciiSlider: View {
         let minEarned = round(stopwatch.minEarnedMinutes)
         let maxEarned = round(stopwatch.maxEarnedMinutes)
         
-        if mins < minEarned { return .orange }
-        if mins <= maxEarned { return .green }
-        return .red
+        if mins < minEarned { return stopwatch.themeManager.pausedColor }
+        if mins <= maxEarned { return stopwatch.themeManager.ringColors.min }
+        return stopwatch.themeManager.ringColors.hr
     }
 }
 
@@ -177,7 +177,8 @@ struct AsciiSlider: View {
 private func renderAsciiString(ctx: GraphicsContext, str: String,
                                 cx: Double, cy: Double,
                                 cellSize: Double, scale: Double,
-                                color: Color, t: Double) {
+                                color: Color, t: Double,
+                                alphaFloor: Double = 0.4) {
     let stepX  = Double(5 + 1) * cellSize * scale
     let totalW = Double(str.count) * stepX
     var ox     = cx - totalW / 2
@@ -209,7 +210,7 @@ private func renderAsciiString(ctx: GraphicsContext, str: String,
                     let fy    = py + jy
 
                     ctx.draw(
-                        Text(ascii).font(fnt).foregroundColor(color.opacity(0.4 + depth * 0.6)),
+                        Text(ascii).font(fnt).foregroundColor(color.opacity(alphaFloor + depth * (1 - alphaFloor))),
                         at: CGPoint(x: fx, y: fy)
                     )
                 }
@@ -224,7 +225,7 @@ struct AsciiThemeView: View {
     @ObservedObject var stopwatch: StopwatchManager
 
     private var textColor: Color {
-        stopwatch.themeManager.currentTheme?.isLight ?? false ? .black : .white
+        stopwatch.themeManager.isLightActive ? .black : .white
     }
 
     var body: some View {
@@ -239,7 +240,7 @@ struct AsciiThemeView: View {
                                 }
                             }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 24))
+                                    .font(helvetica(24))
                                     .foregroundColor(textColor.opacity(0.3))
                                     .padding(24)
                             }
@@ -283,9 +284,9 @@ struct AsciiThemeView: View {
     private func colorForMinutes(_ mins: Double) -> Color {
         let minEarned = round(stopwatch.minEarnedMinutes)
         let maxEarned = round(stopwatch.maxEarnedMinutes)
-        if mins < minEarned { return .orange }
-        if mins <= maxEarned { return .green }
-        return .red
+        if mins < minEarned { return stopwatch.themeManager.pausedColor }
+        if mins <= maxEarned { return stopwatch.themeManager.ringColors.min }
+        return stopwatch.themeManager.ringColors.hr
     }
 }
 
@@ -314,22 +315,12 @@ struct AsciiJellyCanvas: View {
                 // Rings — inner to outer (pushed out to avoid clashing)
                 let activeElapsed = stopwatch.isBreakActive ? stopwatch.breakTime : stopwatch.elapsedTime
                 let visualRings: [(r: Double, period: Double, color: Color, dim: Color)] = [
-                    (size.width * 0.35, 60,       
-                     Color(red: 0.0, green: 0.6, blue: 1.0), // Seconds (always blue)
-                     .clear),
-                    (size.width * 0.41, 3600,     
-                     Color(red: 0.2, green: 0.8, blue: 0.3), // Minutes (always green)
-                     .clear),
-                    (size.width * 0.47, 43200,    
-                     Color(red: 1.0, green: 0.2, blue: 0.3), // Hours (always red)
-                     .clear),
+                    (size.width * 0.35, 60,    ringColors.sec, .clear), // Seconds (always blue)
+                    (size.width * 0.41, 3600,  ringColors.min, .clear), // Minutes (always green)
+                    (size.width * 0.47, 43200, ringColors.hr,  .clear), // Hours (always red)
                 ]
                 
-                let revealFactor: Double = {
-                    guard let start = revealStart else { return 1.0 }
-                    let dt = t - start
-                    return dt >= 1.0 ? 1.0 : max(0, dt / 1.0)
-                }()
+                let revealFactor = ringRevealFactor(since: revealStart, at: t)
 
                 for ring in visualRings {
                     drawJellyRing(ctx: ctx, cx: cx, cy: cy,
@@ -343,8 +334,7 @@ struct AsciiJellyCanvas: View {
                                  t: t, size: size, isBreak: stopwatch.isBreakActive)
             }
         }
-        .onChange(of: stopwatch.isRunning) { _, running in
-            guard running else { return }
+        .onChange(of: stopwatch.ringRevealID) { _, _ in
             revealStart = Date.timeIntervalSinceReferenceDate
         }
     }
@@ -371,11 +361,13 @@ struct AsciiJellyCanvas: View {
                                 radius: Double, period: Double,
                                 color: Color, dim: Color,
                                 elapsed: TimeInterval, revealFactor: Double, t: Double, size: CGSize) {
-        let nPts       = 90
+        let nPts       = 120
         let prog       = (elapsed / period).truncatingRemainder(dividingBy: 1.0) * revealFactor
         let activeCount = Int(prog * Double(nPts))
-        let cellSize   = max(2.5, size.width * 0.008)
+        let cellSize   = max(5.0, size.width * 0.018)
         let fnt        = Font.system(size: cellSize, weight: .bold, design: .monospaced)
+        // Half-alpha dots glow nicely on black; on cream they read as pastel and vanish.
+        let colorFloor = isLight ? 0.9 : 0.5
 
         for i in 0..<nPts {
             let baseAngle = Double(i) / Double(nPts) * .pi * 2 - .pi / 2
@@ -411,11 +403,13 @@ struct AsciiJellyCanvas: View {
             )
 
             ctx.draw(
-                Text(ch).font(fnt).foregroundColor(color.opacity(0.5 + depth * 0.5)),
+                Text(ch).font(fnt).foregroundColor(color.opacity(colorFloor + depth * (1 - colorFloor))),
                 at: CGPoint(x: px, y: py)
             )
 
-            if depth > 0.55 {
+            // The white sparkle only works on a dark background — on cream it paints over
+            // the brightest cells and lightens the exact dots you are trying to see.
+            if depth > 0.55 && !isLight {
                 ctx.draw(
                     Text(String(rampChar(0.9))).font(fnt)
                         .foregroundColor(Color.white.opacity((depth - 0.55) * 1.6 * 0.75)),
@@ -441,8 +435,15 @@ struct AsciiJellyCanvas: View {
         }
     }
 
+    // Ring + Hrs/Min/Sec hues for the active theme (see ThemeManager.ringColors).
+    private var ringColors: (sec: Color, min: Color, hr: Color) { stopwatch.themeManager.ringColors }
+
+    private var pausedColor: Color { stopwatch.themeManager.pausedColor }
+
+    private var isLight: Bool { stopwatch.themeManager.isLightActive }
+
     private var textColor: Color {
-        stopwatch.themeManager.currentTheme?.isLight ?? false ? .black : .white
+        isLight ? .black : .white
     }
 
     private func drawDigitDisplay(ctx: GraphicsContext, cx: Double, cy: Double,
@@ -457,24 +458,25 @@ struct AsciiJellyCanvas: View {
 
         let cell = max(4.0, size.width * 0.016)
 
-        renderAsciiString(ctx: ctx, str: mainStr, cx: cx, cy: cy - cell * 2.0, cellSize: cell, scale: 1.2, color: textColor, t: t)
-        renderAsciiString(ctx: ctx, str: subStr, cx: cx + cell * 3.0, cy: cy + cell * 6.5, cellSize: cell, scale: 0.8, color: textColor.opacity(0.5), t: t)
+        let textFloor = isLight ? 0.85 : 0.4
+        renderAsciiString(ctx: ctx, str: mainStr, cx: cx, cy: cy - cell * 2.0, cellSize: cell, scale: 1.2, color: textColor, t: t, alphaFloor: textFloor)
+        renderAsciiString(ctx: ctx, str: subStr, cx: cx + cell * 3.0, cy: cy + cell * 6.5, cellSize: cell, scale: 0.8, color: textColor.opacity(0.5), t: t, alphaFloor: textFloor)
 
         let lbls: [(String, Color, Double)] = [
-            ("Hrs", Color(red: 1.0, green: 0.2, blue: 0.3), cx - cell * 8),
-            ("Min", Color(red: 0.2, green: 0.8, blue: 0.3), cx),
-            ("Sec", Color(red: 0.0, green: 0.6, blue: 1.0), cx + cell * 8),
+            ("Hrs", ringColors.hr, cx - cell * 14),
+            ("Min", ringColors.min, cx),
+            ("Sec", ringColors.sec, cx + cell * 14),
         ]
         for (lbl, col, lx) in lbls {
-            renderAsciiString(ctx: ctx, str: lbl, cx: lx, cy: cy + cell * 10.5, cellSize: cell, scale: 0.45, color: col.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: lbl, cx: lx, cy: cy + cell * 10.5, cellSize: cell, scale: 0.78, color: col.opacity(1.0), t: t, alphaFloor: isLight ? 0.9 : 0.8)
         }
         
         if isBreak {
-            renderAsciiString(ctx: ctx, str: "Break", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.blue.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Break", cx: cx, cy: cy + cell * 15.5, cellSize: cell, scale: 0.88, color: ringColors.sec.opacity(1.0), t: t, alphaFloor: isLight ? 0.9 : 0.8)
         } else if stopwatch.isRunning {
-            renderAsciiString(ctx: ctx, str: "Focus", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.green.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Focus", cx: cx, cy: cy + cell * 15.5, cellSize: cell, scale: 0.88, color: ringColors.min.opacity(1.0), t: t, alphaFloor: isLight ? 0.9 : 0.8)
         } else {
-            renderAsciiString(ctx: ctx, str: "Paused", cx: cx, cy: cy + cell * 14.0, cellSize: cell, scale: 0.5, color: Color.orange.opacity(0.8), t: t)
+            renderAsciiString(ctx: ctx, str: "Paused", cx: cx, cy: cy + cell * 15.5, cellSize: cell, scale: 0.88, color: pausedColor.opacity(1.0), t: t, alphaFloor: isLight ? 0.9 : 0.8)
         }
     }
 }

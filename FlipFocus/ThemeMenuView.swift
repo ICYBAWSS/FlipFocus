@@ -12,10 +12,10 @@ struct ThemeMenuView: View {
                 VStack(alignment: .leading, spacing: 32) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Choose wisely")
-                            .font(.system(size: 11, weight: .bold, design: .default))
+                            .font(helvetica(11, .bold))
                             .foregroundColor(.secondary)
                         Text("Themes")
-                            .font(.system(size: 48, weight: .bold, design: .default))
+                            .font(helvetica(48, .bold))
                     }
                     .padding(.horizontal, 24)
 
@@ -61,7 +61,7 @@ struct ThemeMenuView: View {
                                 HStack {
                                     Image(systemName: "plus.circle.fill")
                                     Text("Create New Theme")
-                                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                        .font(helvetica(15, .semibold))
                                 }
                                 .foregroundColor(.blue)
                                 .frame(maxWidth: .infinity)
@@ -83,7 +83,7 @@ struct ThemeMenuView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(helvetica(15, .semibold))
                 }
             }
             .sheet(item: $themeToEdit) { theme in
@@ -107,15 +107,15 @@ struct CustomThemePreviewCard: View {
                         .fill(Color.gray.opacity(0.15))
                         .frame(width: 64, height: 64)
                     Image(systemName: "photo.on.rectangle.angled")
-                        .font(.system(size: 20))
+                        .font(helvetica(20))
                         .foregroundColor(.blue)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(theme.name)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(helvetica(15, .semibold))
                     Text("Tap to select, edit to customize")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(helvetica(12))
                         .foregroundColor(.secondary)
                 }
 
@@ -123,12 +123,12 @@ struct CustomThemePreviewCard: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20)).foregroundColor(.blue)
+                        .font(helvetica(20)).foregroundColor(.blue)
                 }
                 
                 Button(action: onEdit) {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(helvetica(14, .bold))
                         .foregroundColor(.blue)
                         .padding(10)
                         .background(Circle().fill(Color.blue.opacity(0.1)))
@@ -316,9 +316,9 @@ struct ThemePreviewCard: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(theme.rawValue)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(helvetica(15, .semibold))
                     Text(themeDescription)
-                        .font(.system(size: 12, design: .rounded))
+                        .font(helvetica(12))
                         .foregroundColor(.secondary)
                 }
 
@@ -326,7 +326,7 @@ struct ThemePreviewCard: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20)).foregroundColor(.blue)
+                        .font(helvetica(20)).foregroundColor(.blue)
                 }
             }
             .padding(16)
@@ -345,7 +345,7 @@ struct ThemePreviewCard: View {
     @ViewBuilder private var previewIcon: some View {
         switch theme {
         case .ascii, .asciiLight:
-            Text("01").font(.system(size: 15, weight: .bold, design: .monospaced))
+            Text("01").font(helvetica(15, .bold))
                 .foregroundColor(theme.isLight ? .black.opacity(0.7) : .white.opacity(0.8))
         case .minimal, .minimalLight:
             ZStack {

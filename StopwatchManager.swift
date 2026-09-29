@@ -86,6 +86,30 @@ class ThemeManager: ObservableObject {
         return nil
     }
 
+    /// The appearance actually on screen, resolved exactly like ContentView resolves the
+    /// background — a selected custom theme wins over the built-in one. The canvases must
+    /// ask THIS, never `currentTheme?.isLight`: when the two disagree the cream background
+    /// gets white digits and the bright ring hues, which reads as "too light to see".
+    var isLightActive: Bool {
+        activeSettings?.isLightMode ?? (currentTheme?.isLight ?? false)
+    }
+
+    // Ring hues (seconds/minutes/hours), dark enough to read on the cream background.
+    var ringColors: (sec: Color, min: Color, hr: Color) {
+        isLightActive
+            ? (Color(red: 0.00, green: 0.25, blue: 0.70),
+               Color(red: 0.00, green: 0.40, blue: 0.10),
+               Color(red: 0.70, green: 0.05, blue: 0.10))
+            : (Color(red: 0.0, green: 0.6, blue: 1.0),
+               Color(red: 0.2, green: 0.8, blue: 0.3),
+               Color(red: 1.0, green: 0.2, blue: 0.3))
+    }
+
+    // "Paused" reads as orange; system orange is invisible on cream.
+    var pausedColor: Color {
+        isLightActive ? Color(red: 0.45, green: 0.20, blue: 0.00) : .orange
+    }
+
     func save() {
         if isInitialLoading { return }
         UserDefaults.standard.set(currentTheme?.rawValue, forKey: "current_theme")
@@ -232,6 +256,12 @@ class StopwatchManager: ObservableObject {
     
     // Visual Effects
     @Published var flash: Double = 0
+
+    /// Bumped when the phone is flipped back face-up — the only moment the rings are
+    /// actually on screen — so they sweep from 0 into their real positions there
+    /// instead of already being filled in. Flipping face down to start runs the timer
+    /// with the screen covered, which must not trigger anything.
+    @Published var ringRevealID: Int = 0
     
     private var audioPlayer: AVAudioPlayer?
     
@@ -256,7 +286,13 @@ class StopwatchManager: ObservableObject {
     }
     
     // Debug/Sensor
-    @Published var gravityZ: Double = 0.0
+    @Published var gravityZ: Double = 0.0 {
+        didSet {
+            // Physical flip back to face-up: covers flipping up mid-break, where
+            // stopBreak() runs instead of pause(). Plain pauses bump in pause().
+            if oldValue > 0.8 && gravityZ <= 0.8 { ringRevealID += 1 }
+        }
+    }
     
     private var timer: AnyCancellable?
     private var breakTimer: AnyCancellable?
@@ -577,6 +613,12 @@ class StopwatchManager: ObservableObject {
         timer?.cancel()
         timer = nil
         startTime = nil
+
+        // Paused is the moment the session stops and the user is looking at the screen
+        // (flipped up, reset, or the simulator's Flip button) — so the rings sweep back
+        // in from 0 to the time they just earned. Starting stays silent: that happens
+        // face down, with the screen covered.
+        ringRevealID += 1
         
         // Allow sleep again (unless break is active)
         if !isBreakActive {
@@ -742,5 +784,16 @@ class StopwatchManager: ObservableObject {
             }
         }
         if flash > 0 { flash = max(0, flash - 0.04) }
+    }
+}
+
+// MARK: - Type
+// App-wide typeface. One place maps the old .system(size:weight:design:) call sites onto
+// Helvetica faces, so weight survives as "regular or bold when needed" — Helvetica ships
+// only those two faces on iOS, so light/thin/medium all land on regular.
+func helvetica(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+    switch weight {
+    case .semibold, .bold, .heavy, .black: return .custom("Helvetica-Bold", size: size)
+    default: return .custom("Helvetica", size: size)
     }
 }

@@ -1,5 +1,14 @@
 import SwiftUI
 
+// MARK: - Ring Reveal
+/// How far through the flip-over ring reveal we are, 0 → 1, eased so the arcs settle
+/// into place. Returns 1 (no reveal) when there was no flip.
+func ringRevealFactor(since start: Double?, at t: Double, duration: Double = 1.0) -> Double {
+    guard let start else { return 1.0 }
+    let p = min(1.0, max(0, (t - start) / duration))
+    return p * p * (3 - 2 * p)   // smoothstep: gentle start, no snap at the end
+}
+
 // MARK: - Liquid Glass Atmosphere
 struct ThemeAtmosphere: View {
     let isLight: Bool
@@ -15,7 +24,7 @@ struct MenuLabel: View {
     let text: String
     var body: some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold, design: .default))
+            .font(helvetica(10, .bold))
             .foregroundColor(.secondary)
     }
 }
@@ -26,11 +35,11 @@ struct AnalyticsRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.system(size: 13, weight: .medium, design: .default))
+                .font(helvetica(13, .medium))
                 .foregroundColor(.secondary)
             Spacer()
             Text(value)
-                .font(.system(size: 14, weight: .bold, design: .default))
+                .font(helvetica(14, .bold))
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)
@@ -233,7 +242,7 @@ struct GoalCalendar: View {
 
         return VStack(alignment: .leading, spacing: 3) {
             Text(monthName(for: monthDate))
-                .font(.system(size: 7, weight: .bold, design: .rounded))
+                .font(helvetica(7, .bold))
                 .foregroundColor(.white.opacity(0.5))
 
             LazyVGrid(columns: columns, spacing: 2) {
@@ -295,7 +304,7 @@ struct DayCell: View {
                 )
 
             Text("\(Calendar.current.component(.day, from: date))")
-                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                .font(helvetica(9, .semibold))
                 .foregroundColor(hitGoal ? .black : (isToday ? .blue : .white.opacity(0.45)))
         }
     }

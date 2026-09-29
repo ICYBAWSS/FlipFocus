@@ -28,7 +28,7 @@ struct ContentView: View {
                     }
                 } label: {
                     Image(systemName: "line.3.horizontal")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(helvetica(18, .semibold))
                         .foregroundColor(isLightMode ? .black.opacity(0.8) : .white.opacity(0.9))
                         .frame(width: 44, height: 44)
                         .background(
@@ -72,7 +72,7 @@ struct ContentView: View {
                             hintLabel("Shake to start a break")
                             Button(action: { stopwatch.reset() }) {
                                 Text("Reset session")
-                                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                                    .font(helvetica(12, .regular))
                                     .foregroundColor(isLightMode ? .gray : Color(white: 0.35))
                             }
                         }
@@ -168,7 +168,7 @@ struct ContentView: View {
             // 01:27:43 — every ring lands on a distinct, clearly visible arc.
             Button("Freeze") { stopwatch.debugFreeze(at: 5263) }
         }
-        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+        .font(helvetica(10, .semibold))
         .buttonStyle(.bordered)
         .tint(.pink)
         .padding(.bottom, 6)
@@ -206,7 +206,7 @@ struct ContentView: View {
 
     private func hintLabel(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .font(helvetica(12, .medium))
             .foregroundColor(isLightMode
                 ? .black.opacity(0.3)
                 : .white.opacity(0.3))

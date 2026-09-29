@@ -42,10 +42,10 @@ struct StreakMenuView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Hopefully this will motivate you")
-                            .font(.system(size: 11, weight: .bold, design: .default))
+                            .font(helvetica(11, .bold))
                             .foregroundColor(.secondary)
                         Text("Streaks")
-                            .font(.system(size: 48, weight: .bold, design: .default))
+                            .font(helvetica(48, .bold))
                     }
                     .padding(.horizontal, 24)
 
@@ -63,7 +63,7 @@ struct StreakMenuView: View {
                                 ForEach(CalendarMode.allCases) { mode in
                                     Button(action: { calendarMode = mode }) {
                                         Text(mode.rawValue)
-                                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                                            .font(helvetica(11, .semibold))
                                             .padding(.horizontal, 12).padding(.vertical, 6)
                                             .background(Capsule().fill(calendarMode == mode ? Color.green : Color.primary.opacity(0.04)))
                                             .foregroundColor(calendarMode == mode ? .black : .secondary)
@@ -83,9 +83,9 @@ struct StreakMenuView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("\(Int(stopwatch.dailyGoal))")
-                                    .font(.system(size: 44, weight: .bold)).foregroundColor(.blue)
-                                Text("how many minutes would you like to be focusing daily?")
-                                    .font(.system(size: 12, design: .rounded)).foregroundColor(.secondary)
+                                    .font(helvetica(44, .bold)).foregroundColor(.blue)
+                                Text("How many minutes would you like to be focusing daily?")
+                                    .font(helvetica(12)).foregroundColor(.secondary)
                             }
                             Spacer()
                             HStack(spacing: 10) {
@@ -108,7 +108,7 @@ struct StreakMenuView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") { dismiss() }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(helvetica(15, .semibold))
                 }
             }
         }
@@ -117,11 +117,11 @@ struct StreakMenuView: View {
 
     private func streakCard(value: Int, label: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("\(value)").font(.system(size: 48, weight: .bold)).foregroundColor(color)
+            Text("\(value)").font(helvetica(48, .bold)).foregroundColor(color)
             Text(label)
-                .font(.system(size: 10, weight: .bold, design: .default))
+                .font(helvetica(10, .bold))
                 .foregroundColor(color.opacity(0.7))
-            Text("days").font(.system(size: 12, weight: .medium, design: .default)).foregroundColor(.secondary)
+            Text("days").font(helvetica(12, .medium)).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(20)
@@ -130,7 +130,7 @@ struct StreakMenuView: View {
 
     private func stepBtn(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label).font(.system(size: 22, weight: .medium))
+            Text(label).font(helvetica(22, .medium))
                 .frame(width: 44, height: 44)
                 .background(Circle().fill(Color.primary.opacity(0.04)))
         }
