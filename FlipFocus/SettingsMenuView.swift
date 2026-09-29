@@ -130,7 +130,7 @@ struct SettingsMenuView: View {
 
                     // About
                     VStack(alignment: .center, spacing: 8) {
-                        Text("FlipFocus v1.0")
+                        Text("Flip&Focus v1.0")
                             .font(helvetica(12, .medium))
                             .foregroundColor(.secondary)
                         Text("Thank you for using my app! :D")

@@ -1,4 +1,4 @@
-# FlipFocus
+# Flip&Focus
 
 ### Flip your phone face down to start a focus session. Flip it back to stop. 
 
@@ -14,7 +14,7 @@
 <img width="330" height="717" alt="themes!" src="https://github.com/user-attachments/assets/37c1d1e8-b1fa-4500-a9c1-56495464503e" />
 
 
-iOS 18.0+ · Bundle ID `icybawss.FlipFocus`
+iOS 18.0+ · Bundle ID `xyz.rayhan.flipfocus` · Apple ID `6807234083`
 
 ## Install via AltStore
 
@@ -26,5 +26,5 @@ https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/apps.json
 
 Or tap: [altstore://source?url=https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/apps.json](altstore://source?url=https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/apps.json)
 
-Then open the **FlipFocus** source and install the app.
+Then open the **Flip&Focus** source and install the app.
 

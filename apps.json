@@ -1,21 +1,21 @@
 {
-  "name": "FlipFocus",
-  "identifier": "icybawss.flipfocus.source",
+  "name": "Flip&Focus",
+  "identifier": "xyz.rayhan.flipfocus.source",
   "subtitle": "Flip your phone. Focus your mind.",
-  "description": "The official AltStore source for FlipFocus — a focus timer that starts when you flip your phone face down.",
+  "description": "The official AltStore source for Flip&Focus \u2014 a focus timer that starts when you flip your phone face down.",
   "iconURL": "https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/FlipFocus/Assets.xcassets/AppIcon.appiconset/icon%281%29.png",
   "website": "https://github.com/ICYBAWSS/flipfocus",
   "tintColor": "#4F46E5",
   "featuredApps": [
-    "icybawss.FlipFocus"
+    "xyz.rayhan.flipfocus"
   ],
   "apps": [
     {
-      "name": "FlipFocus",
-      "bundleIdentifier": "icybawss.FlipFocus",
+      "name": "Flip&Focus",
+      "bundleIdentifier": "xyz.rayhan.flipfocus",
       "developerName": "ICYBAWSS",
       "subtitle": "Flip your phone. Focus your mind.",
-      "localizedDescription": "FlipFocus turns your phone into a focus tool. Place your phone face down and the timer starts automatically; flip it back up and your session ends. Track streaks, choose from multiple ASCII and minimal themes, and stay off your phone while you work.\n\nFeatures:\n• Motion-based focus detection — flip face down to start\n• Focus streaks and stats\n• Multiple themes (ASCII jelly, minimal, custom)\n• Break timer with end-of-break sound",
+      "localizedDescription": "Flip&Focus turns your phone into a focus tool. Place your phone face down and the timer starts automatically; flip it back up and your session ends. Track streaks, choose from multiple ASCII and minimal themes, and stay off your phone while you work.\n\nFeatures:\n\u2022 Motion-based focus detection \u2014 flip face down to start\n\u2022 Focus streaks and stats\n\u2022 Multiple themes (ASCII jelly, minimal, custom)\n\u2022 Break timer with end-of-break sound",
       "iconURL": "https://raw.githubusercontent.com/ICYBAWSS/flipfocus/main/FlipFocus/Assets.xcassets/AppIcon.appiconset/icon%281%29.png",
       "tintColor": "#4F46E5",
       "category": "productivity",
@@ -25,7 +25,7 @@
           "version": "1.0",
           "buildVersion": "1",
           "date": "2026-07-10",
-          "localizedDescription": "Initial AltStore release of FlipFocus.",
+          "localizedDescription": "Initial AltStore release of Flip&Focus.",
           "downloadURL": "https://github.com/ICYBAWSS/flipfocus/releases/download/v1.0/FlipFocus.ipa",
           "size": 1357927,
           "minOSVersion": "18.0"
