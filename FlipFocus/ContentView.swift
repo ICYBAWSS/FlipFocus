@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showingIntelMenu = false
     @State private var showingStreakMenu = false
     @State private var showingSettingsMenu = false
+    @State private var debugHidden = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -87,7 +88,7 @@ struct ContentView: View {
             .padding(.bottom, 30)
 
             #if targetEnvironment(simulator)
-            simulatorDebugStrip
+            if !debugHidden { simulatorDebugStrip }
             #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -167,6 +168,7 @@ struct ContentView: View {
             Button("+45m") { stopwatch.debugFastForward(45 * 60) }
             // 01:27:43 — every ring lands on a distinct, clearly visible arc.
             Button("Freeze") { stopwatch.debugFreeze(at: 5263) }
+            Button("Hide") { debugHidden = true }
         }
         .font(helvetica(10, .semibold))
         .buttonStyle(.bordered)
