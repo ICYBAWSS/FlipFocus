@@ -8,13 +8,16 @@ struct MinimalThemeView: View {
     private var textColor: Color { isLight ? .black : .white }
     private var subtleColor: Color { isLight ? Color.black.opacity(0.45) : Color.white.opacity(0.45) }
 
-    // Ring + legend hues for the active theme (see ThemeManager.ringColors).
-    private var ringColors: (sec: Color, min: Color, hr: Color) { stopwatch.themeManager.ringColors }
+    // OG minimal palette. Kept local on purpose: ThemeManager.ringColors/pausedColor
+    // carry the ASCII theme's darker light-mode hues, which read as muddy here.
+    private let ringSec = Color(red: 0.0, green: 0.6, blue: 1.0)
+    private let ringMin = Color(red: 0.2, green: 0.8, blue: 0.3)
+    private let ringHr  = Color(red: 1.0, green: 0.2, blue: 0.3)
 
     private var accentColor: Color {
-        if stopwatch.isBreakActive { return isLight ? ringColors.sec : .blue }
-        if stopwatch.isRunning    { return isLight ? ringColors.min : Color(red: 0.12, green: 0.78, blue: 0.42) }
-        return isLight ? stopwatch.themeManager.pausedColor : Color(red: 1.0, green: 0.62, blue: 0.1)
+        if stopwatch.isBreakActive { return .blue }
+        if stopwatch.isRunning    { return Color(red: 0.12, green: 0.78, blue: 0.42) }
+        return Color(red: 1.0, green: 0.62, blue: 0.1)
     }
 
     private var stateLabel: String {
@@ -101,9 +104,9 @@ struct MinimalThemeView: View {
 
     private var ringLegend: some View {
         HStack(spacing: 20) {
-            legendItem("Hrs", color: ringColors.hr)
-            legendItem("Min", color: ringColors.min)
-            legendItem("Sec", color: ringColors.sec)
+            legendItem("Hrs", color: ringHr)
+            legendItem("Min", color: ringMin)
+            legendItem("Sec", color: ringSec)
         }
     }
 
@@ -142,13 +145,13 @@ struct MinimalThemeView: View {
 
             ZStack {
                 // Seconds (Outer) - Blue
-                singleRing(progress: sProg * reveal, color: ringColors.sec, thickness: 3, radius: 110)
+                singleRing(progress: sProg * reveal, color: ringSec, thickness: 3, radius: 110)
 
                 // Minutes (Middle) - Green
-                singleRing(progress: mProg * reveal, color: ringColors.min, thickness: 3, radius: 95)
+                singleRing(progress: mProg * reveal, color: ringMin, thickness: 3, radius: 95)
 
                 // Hours (Inner) - Red
-                singleRing(progress: hProg * reveal, color: ringColors.hr, thickness: 3, radius: 80)
+                singleRing(progress: hProg * reveal, color: ringHr, thickness: 3, radius: 80)
             }
         }
     }
