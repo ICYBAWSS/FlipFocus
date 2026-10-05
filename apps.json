@@ -22,12 +22,12 @@
       "screenshots": [],
       "versions": [
         {
-          "version": "1.0",
-          "buildVersion": "1",
-          "date": "2026-07-10",
-          "localizedDescription": "Initial AltStore release of Flip&Focus.",
-          "downloadURL": "https://github.com/ICYBAWSS/flipfocus/releases/download/v1.0/FlipFocus.ipa",
-          "size": 1357927,
+          "version": "1.1",
+          "buildVersion": "2",
+          "date": "2026-10-05",
+          "localizedDescription": "Flip&Focus 1.1 — new Helvetica type and a refreshed app icon, more readable theme rings (including a proper paused state), and a tidier simulator debug strip.",
+          "downloadURL": "https://github.com/ICYBAWSS/flipfocus/releases/download/v1.1/FlipFocus.ipa",
+          "size": 1128650,
           "minOSVersion": "18.0"
         }
       ],
